@@ -134,7 +134,9 @@ export default function CreatePalette() {
           >
             <div className="w-full h-full" style={{ backgroundColor: color }} />
             <input
-              ref={(el) => (inputRefs.current[idx] = el)}
+              ref={(el) => {
+                inputRefs.current[idx] = el;
+              }}
               type="color"
               value={color}
               onChange={(e) => updateColor(idx, e.target.value)}

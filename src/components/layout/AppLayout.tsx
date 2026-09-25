@@ -90,7 +90,7 @@ function AppLayout() {
           </button>
         </div>
 
-        {/* Desktop search — unchanged position/behavior */}
+        {/* Desktop search - unchanged position/behavior */}
         <div className="flex-1 max-w-[885px] relative md:right-15 hidden md:block">
           {!isFullScreenView && <SearchBar />}
         </div>
@@ -141,7 +141,7 @@ function AppLayout() {
       )}
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Desktop sidebar — unchanged */}
+        {/* Desktop sidebar - unchanged */}
         {!isCreateView && !isFullScreenView && (
           <div className="w-48 flex-shrink-0 h-full overflow-y-auto pl-4 pr-2 pb-2 pt-3 hidden lg:block">
             <LeftSidebar />

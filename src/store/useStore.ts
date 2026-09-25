@@ -241,7 +241,7 @@ export const useStore = create<AppState>((set, get) => {
 
       set({ likedPaletteIds: newSet, palettes: updatedPalettes });
 
-      // Async sync – wrapped in try/catch to prevent unhandled rejections
+      // Async sync - wrapped in try/catch to prevent unhandled rejections
       (async () => {
         try {
           if (isCurrentlyLiked) {

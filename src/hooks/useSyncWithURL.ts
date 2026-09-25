@@ -93,7 +93,7 @@ export const useSyncWithURL = () => {
       setSelectedFilters(filtersFromURL);
     }
 
-    // ❌ REMOVED: setHydrated(true) – fetchPalettes handles this
+    // ❌ REMOVED: setHydrated(true) - fetchPalettes handles this
   }, [location.pathname, searchParams]);
 
   // Effect 2: Store -> URL

@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import { useStore } from "../../store/useStore";
 import { TAG_COLORS } from "../../data/tagColors";
 
