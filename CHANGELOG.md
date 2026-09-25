@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type errors that broke `npm run type-check` (ref callback, icon props, JSX
   namespace, missing `vite/client` types)
 - Em dashes replaced with plain hyphens in comments and page metadata
+- My Creations listed every user-published palette from the shared database in
+  all browsers. It now tracks palettes published from the current device via
+  `localStorage`, matching the documented behavior, and the sidebar entry only
+  appears once this browser has published something
 
 ## [1.0.0] - 2026-08-02
 

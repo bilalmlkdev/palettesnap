@@ -93,10 +93,11 @@ const NAV_ICONS: Record<string, JSX.Element> = {
 };
 
 export default function LeftSidebar() {
-  const { currentView, setView, activeTags, setActiveTags, palettes } =
+  const { currentView, setView, activeTags, setActiveTags, createdPaletteIds } =
     useStore();
 
-  const hasUserCreated = palettes.some((p) => p.isUserCreated === true);
+  // Device-scoped: show "My Creations" only if THIS browser published something
+  const hasUserCreated = createdPaletteIds.size > 0;
 
   const handleTagClick = (tag: string) => {
     const isActive = activeTags.some(

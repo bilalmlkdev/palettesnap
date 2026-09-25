@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { getDeviceId } from "../utils/deviceId"; //  path updated
+import { getCreatedIds, persistCreatedIds } from "../utils/createdPalettes";
 import { MOCK_PALETTES } from "../data/mockPalettes";
 
 export type FilterItem = {
@@ -42,6 +43,7 @@ export interface AppState {
   palettes: Palette[];
   randomPalettes: Palette[];
   likedPaletteIds: Set<string>;
+  createdPaletteIds: Set<string>;
   selectedPaletteId: string | null;
   isLoading: boolean;
   isHydrated: boolean;
@@ -87,6 +89,7 @@ export const useStore = create<AppState>((set, get) => {
     palettes: [],
     randomPalettes: [],
     likedPaletteIds: new Set(),
+    createdPaletteIds: getCreatedIds(),
     selectedPaletteId: null,
     isLoading: false,
     isHydrated: false,
@@ -272,8 +275,15 @@ export const useStore = create<AppState>((set, get) => {
     },
 
     addPalette: (newPalette: Palette) => {
+      // Device-scoped: remember the id so My Creations only shows palettes
+      // published from THIS browser, not from every session worldwide.
+      const createdPaletteIds = new Set(get().createdPaletteIds);
+      createdPaletteIds.add(newPalette.id);
+      persistCreatedIds(createdPaletteIds);
+
       set((state) => ({
         palettes: [{ ...newPalette, isUserCreated: true }, ...state.palettes],
+        createdPaletteIds,
       }));
 
       (async () => {
@@ -308,11 +318,14 @@ export const useStore = create<AppState>((set, get) => {
         selectedFilters,
         searchText,
         activeTags,
+        createdPaletteIds,
       } = get();
       let result = currentView === "random" ? randomPalettes : palettes;
 
       if (currentView === "creations") {
-        result = result.filter((p) => p.isUserCreated === true);
+        // Only palettes published from this device (see createdPalettes.ts),
+        // never every palette with is_user_created = true in the shared table.
+        result = result.filter((p) => createdPaletteIds.has(p.id));
       }
       if (activeTags && activeTags.length > 0) {
         const lowerTags = activeTags.map((t) => t.toLowerCase());
