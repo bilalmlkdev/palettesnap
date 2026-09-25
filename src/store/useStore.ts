@@ -6,11 +6,11 @@ import { getVisitorKey } from "../utils/fingerprint";
 import {
   bumpLocalPublishCount,
   readLocalPublishCount,
-  utcDayStartISO,
+  utcWeekStartISO,
 } from "../utils/publishQuota";
 import { MOCK_PALETTES } from "../data/mockPalettes";
 
-export const CREATION_DAILY_LIMIT = 10;
+export const CREATION_WEEKLY_LIMIT = 20;
 
 export type FilterItem = {
   id: string;
@@ -101,7 +101,7 @@ export const useStore = create<AppState>((set, get) => {
     randomPalettes: [],
     likedPaletteIds: new Set(),
     createdPaletteIds: getCreatedIds(),
-    creationQuota: { used: 0, limit: CREATION_DAILY_LIMIT },
+    creationQuota: { used: 0, limit: CREATION_WEEKLY_LIMIT },
     publishError: null,
     selectedPaletteId: null,
     isLoading: false,
@@ -110,7 +110,7 @@ export const useStore = create<AppState>((set, get) => {
 
     fetchPalettes: async () => {
       // Fingerprint key (async) then load palettes, this device's likes, and
-      // how many palettes this visitor already published today.
+      // how many palettes this visitor already published this week.
       const visitorKey = await getVisitorKey().catch(() => null);
 
       const [
@@ -129,7 +129,7 @@ export const useStore = create<AppState>((set, get) => {
               .from("palettes")
               .select("id", { count: "exact", head: true })
               .eq("creator_hash", visitorKey)
-              .gte("created_at", utcDayStartISO())
+              .gte("created_at", utcWeekStartISO())
           : Promise.resolve({ count: null, error: null }),
       ]);
 
@@ -145,7 +145,7 @@ export const useStore = create<AppState>((set, get) => {
         set({
           palettes: MOCK_PALETTES,
           isHydrated: true,
-          creationQuota: { used: quotaUsed, limit: CREATION_DAILY_LIMIT },
+          creationQuota: { used: quotaUsed, limit: CREATION_WEEKLY_LIMIT },
         });
         return;
       }
@@ -166,7 +166,7 @@ export const useStore = create<AppState>((set, get) => {
         palettes,
         likedPaletteIds: likedIds,
         isHydrated: true,
-        creationQuota: { used: quotaUsed, limit: CREATION_DAILY_LIMIT },
+        creationQuota: { used: quotaUsed, limit: CREATION_WEEKLY_LIMIT },
       });
     },
 
@@ -319,13 +319,13 @@ export const useStore = create<AppState>((set, get) => {
     },
 
     // Publishing is confirmed by the database first (the RLS policy enforces
-    // the 10-per-UTC-day quota server-side), then reflected locally. Returns
+    // the 20-per-week quota server-side), then reflected locally. Returns
     // true only when the palette actually landed in Supabase.
     addPalette: async (newPalette: Palette) => {
       const { creationQuota } = get();
       if (creationQuota.used >= creationQuota.limit) {
         set({
-          publishError: dailyLimitMessage(creationQuota.limit),
+          publishError: weeklyLimitMessage(creationQuota.limit),
         });
         return false;
       }
@@ -354,7 +354,7 @@ export const useStore = create<AppState>((set, get) => {
         console.error("Failed to publish palette:", error);
         set({
           publishError: limited
-            ? dailyLimitMessage(creationQuota.limit)
+            ? weeklyLimitMessage(creationQuota.limit)
             : "Could not publish the palette. Check your connection and try again.",
         });
         return false;
@@ -372,7 +372,7 @@ export const useStore = create<AppState>((set, get) => {
         createdPaletteIds,
         creationQuota: {
           used: creationQuota.used + 1,
-          limit: CREATION_DAILY_LIMIT,
+          limit: CREATION_WEEKLY_LIMIT,
         },
         publishError: null,
       }));
@@ -453,8 +453,8 @@ export const useStore = create<AppState>((set, get) => {
   };
 });
 
-function dailyLimitMessage(limit: number): string {
-  return `Daily publish limit reached (${limit} palettes per day). Resets at 00:00 UTC.`;
+function weeklyLimitMessage(limit: number): string {
+  return `Weekly publish limit reached (${limit} palettes per week). Resets Monday 00:00 UTC.`;
 }
 
 function formatDate(isoString: string): string {

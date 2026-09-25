@@ -302,12 +302,12 @@ export default function CreatePalette() {
         )}
       </div>
 
-      {/* Publish button + daily quota */}
+      {/* Publish button + weekly quota */}
       <div className="w-full max-w-lg mt-6 flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <span className="text-[11.5px] text-zinc-400">
-            {creationQuota.used} of {creationQuota.limit} published today
-            (resets 00:00 UTC)
+            {creationQuota.used} of {creationQuota.limit} published this week
+            (resets Monday 00:00 UTC)
           </span>
           {!isDefaultPalette && (
             <Button
@@ -321,7 +321,7 @@ export default function CreatePalette() {
         {(publishError || quotaFull) && (
           <p className="text-[11.5px] leading-relaxed text-red-500 text-right">
             {publishError ??
-              `Daily publish limit reached (${creationQuota.limit} palettes per day). Resets at 00:00 UTC.`}
+              `Weekly publish limit reached (${creationQuota.limit} palettes per week). Resets Monday 00:00 UTC.`}
           </p>
         )}
       </div>

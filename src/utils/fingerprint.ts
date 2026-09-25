@@ -1,7 +1,9 @@
 // Stable per-browser visitor key derived from a device fingerprint instead of
 // localStorage, because incognito windows get a fresh empty storage but still
 // render the same canvas/GPU/screen. Used only to count publish attempts
-// against the 10-per-day limit - never linked to personal information.
+// against the weekly limit - never linked to personal information. The canvas
+// text below is a fixed marker and must not mention limits, so changing the
+// quota never changes anyone's identity.
 const VISITOR_KEY_CACHE = "palettesnap_visitor_key";
 
 const hashString = async (raw: string): Promise<string> => {
@@ -54,9 +56,9 @@ const canvasPart = (): string => {
     ctx.fillStyle = "#f60";
     ctx.fillRect(0, 0, 120, 30);
     ctx.fillStyle = "#069";
-    ctx.fillText("palettesnap 10/day", 2, 8);
+    ctx.fillText("palettesnap fingerprint", 2, 8);
     ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-    ctx.fillText("palettesnap 10/day", 4, 20);
+    ctx.fillText("palettesnap fingerprint", 4, 20);
     return canvas.toDataURL();
   } catch {
     return "";

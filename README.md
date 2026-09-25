@@ -39,7 +39,7 @@ Welcome to **PaletteSnap** - a modern, open-source color palette tool built to m
 
 ### Creation & Export
 - **Instant Publishing:** Pick 4 colors, tag them, and publish instantly-**no account needed**.
-- **Fair-Use Limit:** 10 published palettes per browser per day, enforced in the database, so one visitor cannot flood the shared palette feed.
+- **Fair-Use Limit:** 20 published palettes per browser per week, enforced in the database, so one visitor cannot flood the shared palette feed.
 - **Local History:** Track everything you've published on the device via **My Creations**.
 - **One-Click Export:** Download color schemes as **SVG, PNG, or JPEG**, or copy hex values instantly with **Click-to-Clipboard**.
 

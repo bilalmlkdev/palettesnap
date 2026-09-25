@@ -14,10 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI running lint, type-check, and build on every push and PR
 - `.env.example` and `supabase/schema.sql` so contributors can run the project
   locally from scratch
-- Daily publish quota of 10 palettes per browser. Each visitor gets a
-  fingerprint-based key (canvas, WebGL, screen, timezone - not cookies) that
-  survives incognito windows, and the limit is enforced by an RLS policy in
-  Supabase so direct API calls cannot bypass it
+- Weekly publish quota of 20 palettes per browser (Monday 00:00 UTC reset).
+  Each visitor gets a fingerprint-based key (canvas, WebGL, screen, timezone -
+  not cookies) that survives incognito windows, and the limit is enforced by
+  an RLS policy in Supabase so direct API calls cannot bypass it
 
 ### Fixed
 

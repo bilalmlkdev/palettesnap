@@ -46,10 +46,11 @@ create index if not exists likes_device_id_idx  on public.likes (device_id);
 alter table public.palettes enable row level security;
 alter table public.likes     enable row level security;
 
--- Daily publish quota: at most 10 palettes per browser fingerprint per UTC
--- day. SECURITY DEFINER so the INSERT policy can count rows without tripping
--- over same-table recursion. This runs in the database, so calling the REST
--- API directly cannot get around it - only a brand new fingerprint can.
+-- Weekly publish quota: at most 20 palettes per browser fingerprint per ISO
+-- calendar week (Monday 00:00 UTC). SECURITY DEFINER so the INSERT policy can
+-- count rows without tripping over same-table recursion. This runs in the
+-- database, so calling the REST API directly cannot get around it - only a
+-- brand new fingerprint can.
 create or replace function public.can_create_palette(p_creator_hash text)
 returns boolean
 language sql
@@ -58,10 +59,10 @@ set search_path = public
 as $$
   select p_creator_hash is not null
      and (
-      select count(*) < 10
+      select count(*) < 20
       from public.palettes p
       where p.creator_hash = p_creator_hash
-        and p.created_at >= (date_trunc('day', now() at time zone 'utc') at time zone 'utc')
+        and p.created_at >= (date_trunc('week', now() at time zone 'utc') at time zone 'utc')
     );
 $$;
 
