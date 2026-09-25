@@ -18,10 +18,18 @@ export default function CreatePalette() {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const { addPalette, setView } = useStore();
+  const {
+    addPalette,
+    setView,
+    creationQuota,
+    publishError,
+    clearPublishError,
+  } = useStore();
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Check if the user has changed at least one color
   const isDefaultPalette = colors.every((c, i) => c === DEFAULT_COLORS[i]);
+  const quotaFull = creationQuota.used >= creationQuota.limit;
 
   const lowerSearch = inputValue.toLowerCase().trim();
   const filteredColors = COLOR_FILTERS.filter((c) =>
@@ -32,7 +40,8 @@ export default function CreatePalette() {
   );
   const hasMatches = filteredColors.length > 0 || filteredTags.length > 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (isPublishing || quotaFull) return;
     const tagLabels = selectedTags.map((tag) => tag.label.toLowerCase());
     const newPalette = {
       id: generateId(),
@@ -42,11 +51,16 @@ export default function CreatePalette() {
       tags: tagLabels,
       date: "Just now",
     };
-    addPalette(newPalette);
-    setView("new");
+    setIsPublishing(true);
+    const published = await addPalette(newPalette);
+    setIsPublishing(false);
+    // Only leave the page when the database accepted the palette - on a
+    // quota or network error the error message stays visible here.
+    if (published) setView("new");
   };
 
   const updateColor = (index: number, newColor: string) => {
+    clearPublishError();
     const newColors = [...colors];
     newColors[index] = newColor;
     setColors(newColors);
@@ -288,10 +302,27 @@ export default function CreatePalette() {
         )}
       </div>
 
-      {/* Publish button hidden if palette is still default */}
-      <div className="w-full max-w-lg mt-6 flex justify-end gap-2.5">
-        {!isDefaultPalette && (
-          <Button onClick={handleSave}>Publish palette</Button>
+      {/* Publish button + daily quota */}
+      <div className="w-full max-w-lg mt-6 flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[11.5px] text-zinc-400">
+            {creationQuota.used} of {creationQuota.limit} published today
+            (resets 00:00 UTC)
+          </span>
+          {!isDefaultPalette && (
+            <Button
+              onClick={handleSave}
+              disabled={isPublishing || quotaFull}
+            >
+              {isPublishing ? "Publishing..." : "Publish palette"}
+            </Button>
+          )}
+        </div>
+        {(publishError || quotaFull) && (
+          <p className="text-[11.5px] leading-relaxed text-red-500 text-right">
+            {publishError ??
+              `Daily publish limit reached (${creationQuota.limit} palettes per day). Resets at 00:00 UTC.`}
+          </p>
         )}
       </div>
     </div>

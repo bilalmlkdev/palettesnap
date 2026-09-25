@@ -30,6 +30,17 @@ export default function PrivacyPolicy() {
             personal information and we have no way of connecting it back to
             you.
           </p>
+          <p className="mt-4">
+            To keep the free database healthy, publishing is limited to 10
+            palettes per day per browser. Enforcing that limit requires a
+            fingerprint of your browser - a hash built from technical details
+            like your canvas rendering, WebGL graphics card string, screen
+            size, language, and time zone (never cookies, and never anything
+            that identifies you personally). The hash is stored alongside the
+            palettes you publish and is only used to count today's publishes.
+            Incognito windows on the same computer share this hash, so opening
+            a private window does not reset the limit.
+          </p>
         </section>
 
         <section>

@@ -2,7 +2,15 @@ import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { getDeviceId } from "../utils/deviceId"; //  path updated
 import { getCreatedIds, persistCreatedIds } from "../utils/createdPalettes";
+import { getVisitorKey } from "../utils/fingerprint";
+import {
+  bumpLocalPublishCount,
+  readLocalPublishCount,
+  utcDayStartISO,
+} from "../utils/publishQuota";
 import { MOCK_PALETTES } from "../data/mockPalettes";
+
+export const CREATION_DAILY_LIMIT = 10;
 
 export type FilterItem = {
   id: string;
@@ -44,6 +52,8 @@ export interface AppState {
   randomPalettes: Palette[];
   likedPaletteIds: Set<string>;
   createdPaletteIds: Set<string>;
+  creationQuota: { used: number; limit: number };
+  publishError: string | null;
   selectedPaletteId: string | null;
   isLoading: boolean;
   isHydrated: boolean;
@@ -60,7 +70,8 @@ export interface AppState {
   selectPalette: (id: string | null) => void;
   setSelectedFilters: (filters: FilterItem[]) => void;
   setHydrated: (hydrated: boolean) => void;
-  addPalette: (palette: Palette) => void;
+  clearPublishError: () => void;
+  addPalette: (palette: Palette) => Promise<boolean>;
   fetchPalettes: () => Promise<void>;
 
   getLikedPalettes: () => Palette[];
@@ -90,15 +101,22 @@ export const useStore = create<AppState>((set, get) => {
     randomPalettes: [],
     likedPaletteIds: new Set(),
     createdPaletteIds: getCreatedIds(),
+    creationQuota: { used: 0, limit: CREATION_DAILY_LIMIT },
+    publishError: null,
     selectedPaletteId: null,
     isLoading: false,
     isHydrated: false,
     _loadingToken: 0,
 
     fetchPalettes: async () => {
+      // Fingerprint key (async) then load palettes, this device's likes, and
+      // how many palettes this visitor already published today.
+      const visitorKey = await getVisitorKey().catch(() => null);
+
       const [
         { data: paletteRows, error: pErr },
         { data: likeRows, error: lErr },
+        quotaRes,
       ] = await Promise.all([
         supabase
           .from("palettes")
@@ -106,11 +124,29 @@ export const useStore = create<AppState>((set, get) => {
           .order("created_at", { ascending: false })
           .order("id", { ascending: true }),
         supabase.from("likes").select("palette_id").eq("device_id", deviceId),
+        visitorKey
+          ? supabase
+              .from("palettes")
+              .select("id", { count: "exact", head: true })
+              .eq("creator_hash", visitorKey)
+              .gte("created_at", utcDayStartISO())
+          : Promise.resolve({ count: null, error: null }),
       ]);
+
+      // Server count wins; fall back to the local counter when the count
+      // query fails (offline, or creator_hash column not migrated yet).
+      const quotaUsed =
+        quotaRes && !quotaRes.error && typeof quotaRes.count === "number"
+          ? quotaRes.count
+          : readLocalPublishCount();
 
       if (pErr || lErr) {
         console.error("Failed to load palettes/likes:", pErr || lErr);
-        set({ palettes: MOCK_PALETTES, isHydrated: true });
+        set({
+          palettes: MOCK_PALETTES,
+          isHydrated: true,
+          creationQuota: { used: quotaUsed, limit: CREATION_DAILY_LIMIT },
+        });
         return;
       }
 
@@ -126,7 +162,12 @@ export const useStore = create<AppState>((set, get) => {
         isUserCreated: row.is_user_created,
       }));
 
-      set({ palettes, likedPaletteIds: likedIds, isHydrated: true });
+      set({
+        palettes,
+        likedPaletteIds: likedIds,
+        isHydrated: true,
+        creationQuota: { used: quotaUsed, limit: CREATION_DAILY_LIMIT },
+      });
     },
 
     setView: (view) => {
@@ -135,6 +176,7 @@ export const useStore = create<AppState>((set, get) => {
         currentView: view,
         selectedPaletteId: null,
         activeTags: [],
+        publishError: null,
       };
       if (
         ["new", "popular", "random", "collection", "creations"].includes(view)
@@ -216,6 +258,8 @@ export const useStore = create<AppState>((set, get) => {
 
     setHydrated: (hydrated) => set({ isHydrated: hydrated }),
 
+    clearPublishError: () => set({ publishError: null }),
+
     toggleLike: (id) => {
       const state = get();
       const isCurrentlyLiked = state.likedPaletteIds.has(id);
@@ -274,28 +318,65 @@ export const useStore = create<AppState>((set, get) => {
       })();
     },
 
-    addPalette: (newPalette: Palette) => {
+    // Publishing is confirmed by the database first (the RLS policy enforces
+    // the 10-per-UTC-day quota server-side), then reflected locally. Returns
+    // true only when the palette actually landed in Supabase.
+    addPalette: async (newPalette: Palette) => {
+      const { creationQuota } = get();
+      if (creationQuota.used >= creationQuota.limit) {
+        set({
+          publishError: dailyLimitMessage(creationQuota.limit),
+        });
+        return false;
+      }
+
+      const visitorKey = await getVisitorKey().catch(() => "");
+      const row = {
+        id: newPalette.id,
+        colors: newPalette.colors,
+        tags: newPalette.tags,
+        likes: 0,
+        is_user_created: true,
+        creator_hash: visitorKey || null,
+      };
+
+      let { error } = await supabase.from("palettes").insert(row);
+      if (error && /creator_hash/.test(error.message)) {
+        // Migration not applied yet - retry without the new column so the
+        // site keeps working until the SQL has been run.
+        const { creator_hash: _dropped, ...legacyRow } = row;
+        ({ error } = await supabase.from("palettes").insert(legacyRow));
+      }
+
+      if (error) {
+        const limited =
+          error.code === "42501" || /can_create_palette/i.test(error.message);
+        console.error("Failed to publish palette:", error);
+        set({
+          publishError: limited
+            ? dailyLimitMessage(creationQuota.limit)
+            : "Could not publish the palette. Check your connection and try again.",
+        });
+        return false;
+      }
+
       // Device-scoped: remember the id so My Creations only shows palettes
       // published from THIS browser, not from every session worldwide.
       const createdPaletteIds = new Set(get().createdPaletteIds);
       createdPaletteIds.add(newPalette.id);
       persistCreatedIds(createdPaletteIds);
+      bumpLocalPublishCount();
 
       set((state) => ({
         palettes: [{ ...newPalette, isUserCreated: true }, ...state.palettes],
         createdPaletteIds,
+        creationQuota: {
+          used: creationQuota.used + 1,
+          limit: CREATION_DAILY_LIMIT,
+        },
+        publishError: null,
       }));
-
-      (async () => {
-        const { error } = await supabase.from("palettes").insert({
-          id: newPalette.id,
-          colors: newPalette.colors,
-          tags: newPalette.tags,
-          likes: 0,
-          is_user_created: true,
-        });
-        if (error) console.error("Failed to publish palette:", error);
-      })();
+      return true;
     },
 
     selectPalette: (id) => {
@@ -371,6 +452,10 @@ export const useStore = create<AppState>((set, get) => {
     },
   };
 });
+
+function dailyLimitMessage(limit: number): string {
+  return `Daily publish limit reached (${limit} palettes per day). Resets at 00:00 UTC.`;
+}
 
 function formatDate(isoString: string): string {
   const now = new Date();
