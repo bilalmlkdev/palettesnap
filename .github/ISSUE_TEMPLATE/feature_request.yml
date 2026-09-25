@@ -1,0 +1,50 @@
+name: Feature request
+description: Suggest an idea or improvement for PaletteSnap
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first, then your idea. Ideas with a clear use case
+        get picked up fastest.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Which part of PaletteSnap feels limited today?
+      placeholder: There is no way to organize liked palettes into folders.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to see?
+      placeholder: A collections view where palettes can be grouped and named.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Any workarounds or other tools that solve this?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Extra context
+      description: Mockups, screenshots, or links to similar tools.
+
+  - type: dropdown
+    id: willingness
+    attributes:
+      label: Are you willing to open a pull request?
+      options:
+        - "Yes"
+        - "Maybe, with some guidance"
+        - "No"
+    validations:
+      required: true

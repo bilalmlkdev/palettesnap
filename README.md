@@ -7,6 +7,7 @@
   A fast, no-login color palette discovery tool - browse, search, like, <br> and publish four-color palettes with zero signup friction.
 
   [![Live Demo](https://img.shields.io/badge/Live_Demo-Visit_Site-black?style=for-the-badge)](https://palettesnap.vercel.app)
+  [![CI](https://github.com/bilalmlkdev/palettesnap/actions/workflows/ci.yml/badge.svg)](https://github.com/bilalmlkdev/palettesnap/actions/workflows/ci.yml)
   [![GitHub Stars](https://img.shields.io/github/stars/bilalmlkdev/palettesnap?style=for-the-badge&logo=github&color=yellow)](https://github.com/bilalmlkdev/palettesnap.git)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](./LICENSE)
 </div>
@@ -23,7 +24,7 @@ Welcome to **PaletteSnap** - a modern, open-source color palette tool built to m
 
 ## Why PaletteSnap?
 - **Frictionless Browsing:** Switch instantly between **New, Popular, Random, Tagged, and Custom Feeds** with smart sidebar tag swatches and a multi-tag search bar.
-- **Zero-Barrier Publishing:** Pick 4 colors, tag them, and **publish instantly** for the world to see-no accounts, emails, or passwords required.
+- **Zero-Barrier Publishing:** Pick 4 colors, tag them, and **publish instantly** for the world to see - no accounts, emails, or passwords required.
 - **Anonymous Identity:** Your likes and personal collections are tracked seamlessly via `localStorage`.
 - **Global Persistence:** Backed by **Supabase (Postgres)** so published palettes and like counts sync globally in real time.
 - **Rich Palette Details:** Get instant **Hex & RGB values**, click-to-copy functionality, and discover **Related Palettes** by shared tags.
@@ -48,24 +49,67 @@ Welcome to **PaletteSnap** - a modern, open-source color palette tool built to m
 
 # How to Use PaletteSnap
 1. **Discover Palettes:** Visit the live site and instantly explore beautiful four-color palettes. Filter using the multi-tag search bar or the popular color tags in the sidebar.
-2. **Interact & Save:** Hit the heart icon to save palettes you like. Your choices are automatically remembered on your device-no profile creation required.
+2. **Interact & Save:** Hit the heart icon to save palettes you like. Your choices are automatically remembered on your device - no profile creation required.
 3. **Copy & Export:** Click on any individual color block to copy its Hex or RGB code instantly. You can also export full palettes as high-quality SVGs, PNGs, or JPEGs for your design workflows.
 4. **Publish Your Own:** Open the palette creation tool, choose 4 colors, assign descriptive tags, and hit publish to share it with the world instantly.
+
+# Tech Stack
+
+| Layer | Tools |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4 |
+| State | Zustand, React Router 7 |
+| Motion | Framer Motion |
+| Backend | Supabase (Postgres) with anonymous device identity |
+| Deploy | Vercel |
+
+# Local Development
+Full contributor setup lives in [CONTRIBUTING.md](CONTRIBUTING.md). Short version:
+
+```bash
+git clone https://github.com/bilalmlkdev/palettesnap.git
+cd palettesnap
+npm install
+cp .env.example .env
+```
+
+Create a free Supabase project, run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor, then put your URL and anon key in `.env`:
+
+```bash
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-publishable-key
+```
+
+```bash
+npm run dev        # http://localhost:5173
+npm run lint       # ESLint
+npm run type-check # tsc --noEmit
+npm run build      # production build
+```
+
+CI runs all three checks on every push and pull request.
 
 # Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make to **PaletteSnap** are greatly appreciated!
 
+- [CONTRIBUTING.md](CONTRIBUTING.md) - setup, style guide, commit format, and the PR process
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - how we expect everyone to behave
+- [SECURITY.md](SECURITY.md) - how to report vulnerabilities privately
+- [CHANGELOG.md](CHANGELOG.md) - what changed between releases
+
 ### Ways to Contribute
-* **Report Bugs:** Open an issue if you encounter layout bugs, performance issues, or incorrect asset generation.
-* **Suggest Features:** Have an idea for a new export format, secondary filter tool, or UI improvement? Open a feature request issue!
-* **Submit Pull Requests:** If you want to dive into the codebase and fix a bug or add a feature yourself, we welcome your code contributions.
+* **Report Bugs:** Use the [bug report template](https://github.com/bilalmlkdev/palettesnap/issues/new?template=bug_report.yml) if you encounter layout bugs, performance issues, or incorrect asset generation.
+* **Suggest Features:** Have an idea for a new export format, secondary filter tool, or UI improvement? Open a [feature request](https://github.com/bilalmlkdev/palettesnap/issues/new?template=feature_request.yml).
+* **Submit Pull Requests:** If you want to dive into the codebase and fix a bug or add a feature yourself, we welcome your code contributions. Start with issues labeled `good first issue`.
 
 ### Contribution Process
 1. Fork the Project.
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
+3. Commit your Changes using Conventional Commits (`git commit -m 'feat: add AmazingFeature'`).
 4. Push to the Branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request against the main branch.
+
+CI must be green (lint, type-check, build) before a PR can merge.
 
 # License (MIT)
 This project is licensed under the **MIT License**.

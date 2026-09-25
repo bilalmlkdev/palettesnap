@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Live demo
+    url: https://palettesnap.vercel.app
+    about: Try PaletteSnap before opening an issue.
+  - name: Security report
+    url: https://github.com/bilalmlkdev/palettesnap/security/advisories/new
+    about: Report a vulnerability privately, never in a public issue.
